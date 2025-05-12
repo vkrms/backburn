@@ -26,7 +26,7 @@ const TaskList = () => {
 
   return (
     <motion.div 
-      initial={{ opacity: a0 }}
+      initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="max-w-2xl mx-auto px-4 py-8"
     >
