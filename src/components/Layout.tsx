@@ -33,7 +33,7 @@ const Layout = ({ children }: LayoutProps) => {
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center space-x-2">
               <CalendarClock size={28} className="text-indigo-600" />
-              <span className="font-bold text-xl text-gray-900">SmartPostpone</span>
+              <span className="font-bold text-xl text-gray-900">BackBurn</span>
             </Link>
             
             {/* Desktop Navigation */}
@@ -115,7 +115,7 @@ const Layout = ({ children }: LayoutProps) => {
       <footer className="bg-white border-t border-gray-200 mt-auto">
         <div className="max-w-6xl mx-auto px-4 py-6">
           <p className="text-center text-sm text-gray-500">
-            SmartPostpone &copy; {new Date().getFullYear()} · All rights reserved
+            BackBurn &copy; {new Date().getFullYear()} · All rights reserved
           </p>
         </div>
       </footer>
