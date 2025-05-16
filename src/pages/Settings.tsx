@@ -69,11 +69,7 @@ const Settings = () => {
     >
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Settings</h1>
       
-      <motion.div 
-        className="bg-white rounded-xl shadow-md overflow-hidden mb-8"
-        whileHover={{ y: -2 }}
-        transition={{ type: "spring", stiffness: 300 }}
-      >
+      <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
         <div className="p-6">
           {loading ? (
             <div className="flex justify-center items-center py-12">
@@ -201,7 +197,7 @@ const Settings = () => {
             </form>
           )}
         </div>
-      </motion.div>
+      </div>
       
       {showSuccess && (
         <motion.div 

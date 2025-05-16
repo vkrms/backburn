@@ -24,7 +24,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const isOverdue = !task.completed && new Date(task.dueDate) < new Date();
   
   return (
-    <motion.div 
+    <div 
       className={`border rounded-lg overflow-hidden shadow-sm transition-all ${
         task.completed 
           ? 'bg-gray-50 border-gray-200'
@@ -32,8 +32,6 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
             ? 'bg-red-50 border-red-200'
             : 'bg-white border-gray-200 hover:border-indigo-200 hover:shadow'
       }`}
-      whileHover={{ y: -2 }}
-      transition={{ type: "spring", stiffness: 400 }}
     >
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
@@ -118,7 +116,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

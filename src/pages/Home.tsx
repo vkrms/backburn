@@ -70,11 +70,7 @@ const Home = () => {
     >
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Smart Postpone</h1>
       
-      <motion.div 
-        className="bg-white rounded-xl shadow-md overflow-hidden mb-8"
-        whileHover={{ y: -4 }}
-        transition={{ type: "spring", stiffness: 300 }}
-      >
+      <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
         <div className="p-6">
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
@@ -147,7 +143,7 @@ const Home = () => {
             </motion.button>
           </form>
         </div>
-      </motion.div>
+      </div>
       
       {wasAdded && (
         <motion.div 
