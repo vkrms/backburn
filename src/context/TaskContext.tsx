@@ -1,5 +1,17 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { addDays, format } from 'date-fns';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+// TODO: Replace with your actual Supabase config
+
+console.log(import.meta.env);
+
+const supabaseConfig = {
+  supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+  supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY
+};
+
+// Initialize Supabase
+const supabase = createClient(supabaseConfig.supabaseUrl, supabaseConfig.supabaseKey);
 
 export interface Task {
   id: string;
@@ -7,6 +19,16 @@ export interface Task {
   description?: string;
   dueDate: Date;
   createdAt: Date;
+  completed: boolean;
+}
+
+// Interface for Supabase task data
+interface SupabaseTaskData {
+  id: string;
+  title: string;
+  description?: string;
+  due_date: string;
+  created_at: string;
   completed: boolean;
 }
 
@@ -43,17 +65,23 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      // In a real app, this would be an API call to your backend
-      // For now, let's simulate by using localStorage
-      const storedTasks = localStorage.getItem('tasks');
-      if (storedTasks) {
-        const parsedTasks = JSON.parse(storedTasks).map((task: any) => ({
-          ...task,
-          dueDate: new Date(task.dueDate),
-          createdAt: new Date(task.createdAt)
-        }));
-        setTasks(parsedTasks);
-      }
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const fetchedTasks = data.map((task: SupabaseTaskData) => ({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        dueDate: new Date(task.due_date),
+        createdAt: new Date(task.created_at),
+        completed: task.completed
+      }));
+
+      setTasks(fetchedTasks);
     } catch (error) {
       console.error('Error fetching tasks:', error);
     } finally {
@@ -64,19 +92,31 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
   const addTask = async (title: string, description: string, dueDate: Date) => {
     try {
       const newTask = {
-        id: crypto.randomUUID(),
         title,
         description,
-        dueDate,
-        createdAt: new Date(),
+        due_date: dueDate.toISOString(),
+        created_at: new Date().toISOString(),
         completed: false
       };
-      
-      const updatedTasks = [...tasks, newTask];
-      setTasks(updatedTasks);
-      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-      
-      // In a real app, this would be an API call to your backend
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([newTask])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const addedTask: Task = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        dueDate: new Date(data.due_date),
+        createdAt: new Date(data.created_at),
+        completed: data.completed
+      };
+
+      setTasks(prevTasks => [...prevTasks, addedTask]);
     } catch (error) {
       console.error('Error adding task:', error);
     }
@@ -84,11 +124,14 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
 
   const deleteTask = async (id: string) => {
     try {
-      const updatedTasks = tasks.filter(task => task.id !== id);
-      setTasks(updatedTasks);
-      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-      
-      // In a real app, this would be an API call to your backend
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
     } catch (error) {
       console.error('Error deleting task:', error);
     }
@@ -96,13 +139,26 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
 
   const completeTask = async (id: string) => {
     try {
-      const updatedTasks = tasks.map(task => 
-        task.id === id ? { ...task, completed: !task.completed } : task
-      );
-      setTasks(updatedTasks);
-      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+      const taskToUpdate = tasks.find(task => task.id === id);
+      if (!taskToUpdate) {
+        console.error("Task not found for completion:", id);
+        return;
+      }
+
+      const newCompletedStatus = !taskToUpdate.completed;
       
-      // In a real app, this would be an API call to your backend
+      const { error } = await supabase
+        .from('tasks')
+        .update({ completed: newCompletedStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === id ? { ...task, completed: newCompletedStatus } : task
+        )
+      );
     } catch (error) {
       console.error('Error completing task:', error);
     }
