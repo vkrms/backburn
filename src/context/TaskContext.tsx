@@ -37,6 +37,7 @@ interface TaskContextType {
   addTask: (title: string, description: string, dueDate: Date) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   completeTask: (id: string) => Promise<void>;
+  updateTaskDueDate: (id: string, newDueDate: Date) => Promise<void>;
   loading: boolean;
 }
 
@@ -164,8 +165,27 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
     }
   };
 
+  const updateTaskDueDate = async (id: string, newDueDate: Date) => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ due_date: newDueDate.toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === id ? { ...task, dueDate: newDueDate } : task
+        )
+      );
+    } catch (error) {
+      console.error('Error updating task due date:', error);
+    }
+  };
+
   return (
-    <TaskContext.Provider value={{ tasks, addTask, deleteTask, completeTask, loading }}>
+    <TaskContext.Provider value={{ tasks, addTask, deleteTask, completeTask, updateTaskDueDate, loading }}>
       {children}
     </TaskContext.Provider>
   );

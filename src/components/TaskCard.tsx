@@ -9,7 +9,7 @@ interface TaskCardProps {
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
-  const { deleteTask, completeTask } = useTaskContext();
+  const { deleteTask, completeTask, updateTaskDueDate } = useTaskContext();
   
   const handleComplete = () => {
     completeTask(task.id);
@@ -19,6 +19,21 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     if (confirm('Are you sure you want to delete this task?')) {
       deleteTask(task.id);
     }
+  };
+  
+  const handleRegenerateDate = () => {
+    // Generate a new date that's 7 days from now at the same time
+    const newDate = new Date();
+    newDate.setDate(newDate.getDate() + 7);
+    
+    // Set the time to match the original due time
+    const originalTime = new Date(task.dueDate);
+    newDate.setHours(originalTime.getHours());
+    newDate.setMinutes(originalTime.getMinutes());
+    newDate.setSeconds(0);
+    newDate.setMilliseconds(0);
+    
+    updateTaskDueDate(task.id, newDate);
   };
   
   const isOverdue = !task.completed && new Date(task.dueDate) < new Date();
@@ -109,10 +124,16 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
           )}
           
           {isOverdue && !task.completed && (
-            <div className="flex items-center gap-1.5 text-xs text-red-600 ml-auto">
+            <motion.button
+              onClick={handleRegenerateDate}
+              className="flex items-center gap-1.5 text-xs text-red-600 ml-auto hover:bg-red-100 hover:text-red-700 active:bg-red-200 px-2 py-1 rounded transition-all duration-200 hover:shadow-sm"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Regenerate due date (7 days from now)"
+            >
               <RefreshCw size={14} />
               <span>Overdue</span>
-            </div>
+            </motion.button>
           )}
         </div>
       </div>
