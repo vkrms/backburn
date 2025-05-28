@@ -34,7 +34,6 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center space-x-2">
-              <CalendarClock size={28} className="text-indigo-600" />
               <span className="font-bold text-xl text-gray-900">{companyName}</span>
             </Link>
             
