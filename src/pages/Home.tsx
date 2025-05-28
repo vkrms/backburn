@@ -67,9 +67,7 @@ const Home = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="max-w-2xl mx-auto px-4 py-8"
-    >
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Smart Postpone</h1>
-      
+    >     
       <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
         <div className="p-6">
           <form onSubmit={handleSubmit}>
@@ -133,14 +131,16 @@ const Home = () => {
               </div>
             </div>
             
-            <motion.button
-              type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow transition-colors"
-              disabled={isSubmitting || !title.trim()}
-              whileTap={{ scale: 0.98 }}
-            >
-              {isSubmitting ? 'Postponing...' : 'Postpone It'}
-            </motion.button>
+            <div className="flex justify-center">
+              <motion.button
+                type="submit"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow transition-colors max-w-[320px] cursor-pointer"
+                disabled={isSubmitting || !title.trim()}
+                whileTap={{ scale: 0.98 }}
+              >
+                {isSubmitting ? 'Postponing...' : 'Postpone It'}
+              </motion.button>
+            </div>
           </form>
         </div>
       </div>
