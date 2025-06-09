@@ -1,26 +1,40 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import TaskList from './pages/TaskList';
 import Settings from './pages/Settings';
+import Auth from './pages/Auth';
+import { AuthProvider } from './context/AuthContext';
 import { TaskProvider } from './context/TaskContext';
 import { SettingsProvider } from './context/SettingsContext';
 
 function App() {
   return (
     <Router>
-      <SettingsProvider>
-        <TaskProvider>
-          <Layout>
+      <AuthProvider>
+        <SettingsProvider>
+          <TaskProvider>
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/tasks" element={<TaskList />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route 
+                path="/*" 
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/tasks" element={<TaskList />} />
+                        <Route path="/settings" element={<Settings />} />
+                      </Routes>
+                    </Layout>
+                  </ProtectedRoute>
+                } 
+              />
             </Routes>
-          </Layout>
-        </TaskProvider>
-      </SettingsProvider>
+          </TaskProvider>
+        </SettingsProvider>
+      </AuthProvider>
     </Router>
   );
 }

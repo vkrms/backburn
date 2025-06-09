@@ -1,7 +1,8 @@
-import React, { ReactNode, useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CalendarClock, ListTodo, Settings as SettingsIcon, Menu, X } from 'lucide-react';
+import { CalendarClock, ListTodo, Settings as SettingsIcon, Menu, X, LogOut, User } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,6 +10,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const navItems = [
@@ -38,22 +40,40 @@ const Layout = ({ children }: LayoutProps) => {
             </Link>
             
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-6">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    location.pathname === item.path
-                      ? 'text-indigo-600 bg-indigo-50'
-                      : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                </Link>
-              ))}
-            </nav>
+            <div className="hidden md:flex items-center space-x-6">
+              <nav className="flex space-x-6">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      location.pathname === item.path
+                        ? 'text-indigo-600 bg-indigo-50'
+                        : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </nav>
+              
+              {user && (
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <User size={16} />
+                    <span>{user.email}</span>
+                  </div>
+                  <button
+                    onClick={() => signOut()}
+                    className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut size={16} />
+                    <span>Sign out</span>
+                  </button>
+                </div>
+              )}
+            </div>
             
             {/* Mobile Menu Button */}
             <button 
@@ -92,6 +112,27 @@ const Layout = ({ children }: LayoutProps) => {
                   <span>{item.label}</span>
                 </Link>
               ))}
+              
+              {user && (
+                <>
+                  <div className="px-4 py-3 border-t border-gray-200 mt-2 pt-4">
+                    <div className="flex items-center space-x-2 text-gray-700 text-sm mb-3">
+                      <User size={16} />
+                      <span>{user.email}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        signOut();
+                        closeMenu();
+                      }}
+                      className="flex items-center space-x-3 px-4 py-3 rounded-md font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 transition-colors w-full"
+                    >
+                      <LogOut size={20} />
+                      <span>Sign out</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </nav>
           </motion.div>
         )}

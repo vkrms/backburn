@@ -1,17 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-// TODO: Replace with your actual Supabase config
-
-console.log(import.meta.env);
-
-const supabaseConfig = {
-  supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-  supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY
-};
-
-// Initialize Supabase
-const supabase = createClient(supabaseConfig.supabaseUrl, supabaseConfig.supabaseKey);
+import { supabase } from './AuthContext';
+import { useAuth } from './AuthContext';
 
 export interface Task {
   id: string;
@@ -20,6 +9,7 @@ export interface Task {
   dueDate: Date;
   createdAt: Date;
   completed: boolean;
+  userId: string;
 }
 
 // Interface for Supabase task data
@@ -30,6 +20,7 @@ interface SupabaseTaskData {
   due_date: string;
   created_at: string;
   completed: boolean;
+  user_id: string;
 }
 
 interface TaskContextType {
@@ -56,19 +47,28 @@ interface TaskProviderProps {
 }
 
 export const TaskProvider = ({ children }: TaskProviderProps) => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (user) {
+      fetchTasks();
+    } else {
+      setTasks([]);
+      setLoading(false);
+    }
+  }, [user]);
 
   const fetchTasks = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -79,7 +79,8 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
         description: task.description,
         dueDate: new Date(task.due_date),
         createdAt: new Date(task.created_at),
-        completed: task.completed
+        completed: task.completed,
+        userId: task.user_id
       }));
 
       setTasks(fetchedTasks);
@@ -91,13 +92,16 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
   };
 
   const addTask = async (title: string, description: string, dueDate: Date) => {
+    if (!user) return;
+    
     try {
       const newTask = {
         title,
         description,
         due_date: dueDate.toISOString(),
         created_at: new Date().toISOString(),
-        completed: false
+        completed: false,
+        user_id: user.id
       };
 
       const { data, error } = await supabase
@@ -114,7 +118,8 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
         description: data.description,
         dueDate: new Date(data.due_date),
         createdAt: new Date(data.created_at),
-        completed: data.completed
+        completed: data.completed,
+        userId: data.user_id
       };
 
       setTasks(prevTasks => [...prevTasks, addedTask]);
