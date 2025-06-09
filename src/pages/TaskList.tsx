@@ -7,7 +7,7 @@ import { ListFilter, Clock, Check, X } from 'lucide-react';
 const TaskList = () => {
   const { tasks, loading } = useTaskContext();
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed'>('all');
-  const [sortBy, setSortBy] = useState<'dueDate' | 'createdAt'>('dueDate');
+  const [sortBy, setSortBy] = useState<'dueDate' | 'createdAt' | 'random'>('dueDate');
   
   const filteredTasks = tasks.filter(task => {
     if (filterStatus === 'all') return true;
@@ -17,7 +17,9 @@ const TaskList = () => {
   });
   
   const sortedTasks = [...filteredTasks].sort((a, b) => {
-    if (sortBy === 'dueDate') {
+    if (sortBy === 'random') {
+      return Math.random() - 0.5;
+    } else if (sortBy === 'dueDate') {
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     } else {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -80,11 +82,12 @@ const TaskList = () => {
             <span className="text-sm font-medium text-gray-700">Sort by:</span>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'dueDate' | 'createdAt')}
+              onChange={(e) => setSortBy(e.target.value as 'dueDate' | 'createdAt' | 'random')}
               className="bg-gray-100 border border-gray-300 text-gray-700 py-1 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="dueDate">Due Date</option>
               <option value="createdAt">Created Date</option>
+              <option value="random">Random</option>
             </select>
           </div>
           
