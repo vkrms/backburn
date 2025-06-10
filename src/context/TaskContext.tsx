@@ -29,6 +29,7 @@ interface TaskContextType {
   deleteTask: (id: string) => Promise<void>;
   completeTask: (id: string) => Promise<void>;
   updateTaskDueDate: (id: string, newDueDate: Date) => Promise<void>;
+  updateTask: (id: string, updates: { title?: string; description?: string }) => Promise<void>;
   loading: boolean;
 }
 
@@ -62,7 +63,6 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
 
   const fetchTasks = async () => {
     if (!user) return;
-    
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -93,7 +93,6 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
 
   const addTask = async (title: string, description: string, dueDate: Date) => {
     if (!user) return;
-    
     try {
       const newTask = {
         title,
@@ -152,7 +151,6 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
       }
 
       const newCompletedStatus = !taskToUpdate.completed;
-      
       const { error } = await supabase
         .from('tasks')
         .update({ completed: newCompletedStatus })
@@ -189,8 +187,27 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
     }
   };
 
+  const updateTask = async (id: string, updates: { title?: string; description?: string }) => {
+    try {
+      const { error, data } = await supabase
+        .from('tasks')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.id === id ? { ...task, ...updates } : task
+        )
+      );
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
   return (
-    <TaskContext.Provider value={{ tasks, addTask, deleteTask, completeTask, updateTaskDueDate, loading }}>
+    <TaskContext.Provider value={{ tasks, addTask, deleteTask, completeTask, updateTaskDueDate, updateTask, loading }}>
       {children}
     </TaskContext.Provider>
   );
