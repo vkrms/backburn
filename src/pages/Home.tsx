@@ -4,6 +4,7 @@ import { useTaskContext } from '../context/TaskContext';
 import { useSettingsContext } from '../context/SettingsContext';
 import { addDays, format, setHours, setMinutes } from 'date-fns';
 import TaskCard from '../components/TaskCard';
+import Card from '../components/Card';
 import { CalendarClock, Clock } from 'lucide-react';
 
 const getRandomDueDate = (settings: any): Date => {
@@ -68,8 +69,8 @@ const Home = () => {
       animate={{ opacity: 1 }}
       className="max-w-2xl mx-auto px-4 py-8"
     >     
-      <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
-        <div className="p-6">
+      <Card>
+        <div>
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
@@ -143,7 +144,7 @@ const Home = () => {
             </div>
           </form>
         </div>
-      </div>
+      </Card>
       
       {wasAdded && (
         <motion.div 
