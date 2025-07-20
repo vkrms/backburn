@@ -48,7 +48,7 @@ const Settings = () => {
   };
   
   const resetToDefaults = () => {
-    setMinDaysAhead(1);
+    setMinDaysAhead(0);
     setMaxDaysAhead(4);
     setEarliestHour(8);
     setLatestHour(23);
@@ -91,14 +91,14 @@ const Settings = () => {
                     <input
                       type="number"
                       id="minDaysAhead"
-                      min="1"
+                      min="0"
                       max="30"
                       value={minDaysAhead}
                       onChange={(e) => setMinDaysAhead(parseInt(e.target.value))}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                     <p className="mt-1 text-sm text-gray-500">
-                      Earliest is tomorrow (1 day)
+                      Earliest is today (0 days) or tomorrow (1 day)
                     </p>
                   </div>
                   

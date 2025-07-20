@@ -14,7 +14,7 @@ interface SettingsContextType {
 }
 
 const DEFAULT_SETTINGS: Settings = {
-  minDaysAhead: 1,
+  minDaysAhead: 0,
   maxDaysAhead: 4,
   earliestHour: 8,
   latestHour: 23

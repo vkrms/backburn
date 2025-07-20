@@ -4,12 +4,20 @@ import { format, addDays, setHours, setMinutes } from 'date-fns';
 import { Task, useTaskContext } from '../context/TaskContext';
 import { useSettingsContext } from '../context/SettingsContext';
 import { Calendar, Clock, CheckCircle, Trash2, RefreshCw } from 'lucide-react';
+import { isToday } from '../utils/dateUtils';
 
 interface TaskCardProps {
   task: Task;
 }
 
-const getRandomDueDate = (settings: any): Date => {
+interface Settings {
+  minDaysAhead: number;
+  maxDaysAhead: number;
+  earliestHour: number;
+  latestHour: number;
+}
+
+const getRandomDueDate = (settings: Settings): Date => {
   const { minDaysAhead, maxDaysAhead, earliestHour, latestHour } = settings;
   
   // Random day between minDaysAhead and maxDaysAhead
@@ -59,6 +67,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   };
 
   const isOverdue = !task.completed && new Date(task.dueDate) < new Date();
+  const isDueToday = !task.completed && isToday(new Date(task.dueDate));
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Only enter edit mode if not clicking on a button
@@ -170,15 +179,20 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
               </div>
             </form>
           ) : (
-            <h3 className={`font-medium ${
-              task.completed
-                ? 'text-gray-500 line-through'
-                : isOverdue
-                  ? 'text-red-700'
-                  : 'text-gray-800'
-            }`}>
-              {task.title}
-            </h3>
+            <div className="flex items-center gap-2">
+              {isDueToday && (
+                <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0" title="Due today"></div>
+              )}
+              <h3 className={`font-medium ${
+                task.completed
+                  ? 'text-gray-500 line-through'
+                  : isOverdue
+                    ? 'text-red-700'
+                    : 'text-gray-800'
+              }`}>
+                {task.title}
+              </h3>
+            </div>
           )}
           <div className="flex items-center space-x-2 ml-2">
             <motion.button
