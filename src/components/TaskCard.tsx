@@ -21,17 +21,33 @@ interface Settings {
 const getRandomDueDate = (settings: Settings): Date => {
   const { minDaysAhead, maxDaysAhead, earliestHour, latestHour } = settings;
   
-  // Random day between minDaysAhead and maxDaysAhead
-  const daysAhead = Math.floor(Math.random() * (maxDaysAhead - minDaysAhead + 1)) + minDaysAhead;
+  // Ensure valid ranges and handle edge cases
+  const validMinDays = Math.max(0, minDaysAhead || 0);
+  const validMaxDays = Math.max(validMinDays, maxDaysAhead || validMinDays);
+  const validEarliestHour = Math.max(0, Math.min(23, earliestHour || 8));
+  const validLatestHour = Math.max(validEarliestHour, Math.min(23, latestHour || 23));
   
-  // Random hour between earliestHour and latestHour
-  const hour = Math.floor(Math.random() * (latestHour - earliestHour + 1)) + earliestHour;
+  // Random day between validMinDays and validMaxDays
+  const daysAhead = validMinDays === validMaxDays 
+    ? validMinDays 
+    : Math.floor(Math.random() * (validMaxDays - validMinDays + 1)) + validMinDays;
+  
+  // Random hour between validEarliestHour and validLatestHour
+  const hour = validEarliestHour === validLatestHour
+    ? validEarliestHour
+    : Math.floor(Math.random() * (validLatestHour - validEarliestHour + 1)) + validEarliestHour;
   
   // Random minute (0, 15, 30, or 45)
   const minute = Math.floor(Math.random() * 4) * 15;
   
   const dueDate = addDays(new Date(), daysAhead);
   const dueDateWithTime = setMinutes(setHours(dueDate, hour), minute);
+  
+  // Final validation to ensure we return a valid date
+  if (isNaN(dueDateWithTime.getTime())) {
+    // Fallback to a safe default
+    return addDays(new Date(), 1);
+  }
   
   return dueDateWithTime;
 };
@@ -80,6 +96,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = new Date(e.target.value);
+    // Check if the date is valid
+    if (isNaN(newDate.getTime())) {
+      return; // Don't update if the date is invalid
+    }
     const currentTime = editDueDate;
     newDate.setHours(currentTime.getHours(), currentTime.getMinutes());
     setEditDueDate(newDate);
@@ -87,6 +107,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const [hours, minutes] = e.target.value.split(':').map(Number);
+    // Check if hours and minutes are valid numbers
+    if (isNaN(hours) || isNaN(minutes)) {
+      return; // Don't update if the time is invalid
+    }
     const newDate = new Date(editDueDate);
     newDate.setHours(hours, minutes);
     setEditDueDate(newDate);
