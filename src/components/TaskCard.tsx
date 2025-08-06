@@ -57,10 +57,25 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     }
   };
 
-  const handleRegenerateDate = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const handleRegenerateDate = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
     const newDate = getRandomDueDate(settings);
+    
+    // Update local state
     setEditDueDate(newDate);
+    
+    // If called from outside modal (Postpone further button), save to database immediately
+    if (!isModalOpen) {
+      setSaving(true);
+      try {
+        await updateTaskDueDate(task.id, newDate);
+      } catch (error) {
+        console.error('Error saving date to database:', error);
+      }
+      setSaving(false);
+    }
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +102,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const isDueToday = !task.completed && isToday(new Date(task.dueDate));
 
   const handleEdit = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+    if (e) {
+      e.stopPropagation();
+    }
     setEditTitle(task.title);
     setEditDescription(task.description || '');
     setEditDueDate(new Date(task.dueDate));
