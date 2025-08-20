@@ -1,21 +1,41 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTaskContext } from '../context/TaskContext';
 import TaskCard from '../components/TaskCard';
 import Card from '../components/Card';
-import { ListFilter, Clock, Check, X } from 'lucide-react';
+import { ListFilter, Clock, Check, X, Tag as TagIcon } from 'lucide-react';
 
 const TaskList = () => {
-  const { tasks, loading } = useTaskContext();
+  const { tasks, tags, loading } = useTaskContext();
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed'>('all');
   const [sortBy, setSortBy] = useState<'dueDate' | 'createdAt' | 'random'>('dueDate');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
   const filteredTasks = tasks.filter(task => {
-    if (filterStatus === 'all') return true;
-    if (filterStatus === 'pending') return !task.completed;
-    if (filterStatus === 'completed') return task.completed;
+    // Status filter
+    if (filterStatus === 'pending' && task.completed) return false;
+    if (filterStatus === 'completed' && !task.completed) return false;
+    
+    // Tag filter
+    if (selectedTags.length > 0) {
+      const taskTagNames = task.tags?.map(tag => tag.name) || [];
+      return selectedTags.some(tag => taskTagNames.includes(tag));
+    }
+    
     return true;
   });
+
+  const toggleTagFilter = (tagName: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tagName) 
+        ? prev.filter(t => t !== tagName)
+        : [...prev, tagName]
+    );
+  };
+
+  const clearTagFilters = () => {
+    setSelectedTags([]);
+  };
   
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     if (sortBy === 'random') {
@@ -78,6 +98,40 @@ const TaskList = () => {
           </div>
         </div>
         
+        {/* Tag Filters */}
+        {tags.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <TagIcon size={16} className="text-indigo-500" />
+              <span className="text-sm font-medium text-gray-700">Filter by tags:</span>
+              {selectedTags.length > 0 && (
+                <button
+                  onClick={clearTagFilters}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {tags.map(tag => (
+                <button
+                  key={tag.id}
+                  onClick={() => toggleTagFilter(tag.name)}
+                  className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 transition-colors ${
+                    selectedTags.includes(tag.name)
+                      ? 'bg-indigo-100 text-indigo-800 ring-2 ring-indigo-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <TagIcon size={10} />
+                  {tag.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
         <div className="flex items-center gap-4 mb-6">
           <span className="text-sm font-medium text-gray-700">Sort by:</span>
           <select
@@ -106,8 +160,8 @@ const TaskList = () => {
             <X size={40} className="text-gray-400 mb-2" />
             <p className="text-gray-500 mb-1">No tasks found</p>
             <p className="text-sm text-gray-400">
-              {filterStatus !== 'all' 
-                ? `Try changing your filter or add new tasks`
+              {filterStatus !== 'all' || selectedTags.length > 0
+                ? `Try changing your filters or add new tasks`
                 : `Start by postponing some tasks`}
             </p>
           </div>

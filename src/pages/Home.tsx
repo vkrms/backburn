@@ -5,9 +5,16 @@ import { useSettingsContext } from '../context/SettingsContext';
 import { addDays, format, setHours, setMinutes } from 'date-fns';
 import TaskCard from '../components/TaskCard';
 import Card from '../components/Card';
-import { CalendarClock, Clock } from 'lucide-react';
+import { CalendarClock, Clock, Tag as TagIcon, X } from 'lucide-react';
 
-const getRandomDueDate = (settings: any): Date => {
+interface Settings {
+  minDaysAhead: number;
+  maxDaysAhead: number;
+  earliestHour: number;
+  latestHour: number;
+}
+
+const getRandomDueDate = (settings: Settings): Date => {
   const { minDaysAhead, maxDaysAhead, earliestHour, latestHour } = settings;
   
   // Random day between minDaysAhead and maxDaysAhead
@@ -26,17 +33,40 @@ const getRandomDueDate = (settings: any): Date => {
 };
 
 const Home = () => {
-  const { addTask, tasks } = useTaskContext();
+  const { addTask, tasks, tags } = useTaskContext();
   const { settings } = useSettingsContext();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date>(() => getRandomDueDate(settings));
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [wasAdded, setWasAdded] = useState(false);
 
   const regenerateDate = () => {
     setDueDate(getRandomDueDate(settings));
+  };
+
+  const addTag = (tagName: string) => {
+    const trimmedTag = tagName.trim();
+    if (trimmedTag && !selectedTags.some(tag => tag.toLowerCase() === trimmedTag.toLowerCase())) {
+      setSelectedTags([...selectedTags, trimmedTag]);
+    }
+    setTagInput('');
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (tagInput.trim()) {
+        addTag(tagInput);
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,9 +77,11 @@ const Home = () => {
     setIsSubmitting(true);
     
     try {
-      await addTask(title, description, dueDate);
+      await addTask(title, description, dueDate, selectedTags);
       setTitle('');
       setDescription('');
+      setSelectedTags([]);
+      setTagInput('');
       setDueDate(getRandomDueDate(settings));
       setWasAdded(true);
       
@@ -99,6 +131,77 @@ const Home = () => {
                 placeholder="Add more details..."
                 rows={3}
               />
+            </div>
+            
+            {/* Tags Section */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tags (optional)
+              </label>
+              <div className="space-y-2">
+                {/* Current tags */}
+                {selectedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {selectedTags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      >
+                        <TagIcon size={10} className="mr-1" />
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          className="ml-1 hover:text-blue-600"
+                          disabled={isSubmitting}
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Tag input */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={handleTagInputKeyDown}
+                    placeholder="Add tags like 'quick' or 'important'"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    disabled={isSubmitting}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => tagInput.trim() && addTag(tagInput)}
+                    className="px-3 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                    disabled={isSubmitting || !tagInput.trim()}
+                  >
+                    Add
+                  </button>
+                </div>
+                
+                {/* Existing tags suggestions */}
+                {tags.length > 0 && (
+                  <div className="text-xs text-gray-500">
+                    <span>Existing tags: </span>
+                    {tags.filter(tag => !selectedTags.includes(tag.name)).slice(0, 5).map((tag, index) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => addTag(tag.name)}
+                        className="text-indigo-600 hover:text-indigo-800 mx-1"
+                        disabled={isSubmitting}
+                      >
+                        {tag.name}
+                        {index < Math.min(4, tags.filter(t => !selectedTags.includes(t.name)).length - 1) && ','}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="mb-6">
