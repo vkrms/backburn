@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { format, addDays, setHours, setMinutes } from 'date-fns';
 import { Task, useTaskContext } from '../context/TaskContext';
 import { useSettingsContext } from '../context/SettingsContext';
-import { Calendar, Clock, CheckCircle, Trash2, RefreshCw, Edit } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, Trash2, RefreshCw, Edit, Tag as TagIcon, X } from 'lucide-react';
 import { isToday } from '../utils/dateUtils';
 import Modal from './Modal';
 
@@ -53,12 +53,14 @@ const getRandomDueDate = (settings: Settings): Date => {
 };
 
 const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
-  const { deleteTask, completeTask, updateTaskDueDate, updateTask } = useTaskContext();
+  const { deleteTask, completeTask, updateTaskDueDate, updateTask, tags } = useTaskContext();
   const { settings } = useSettingsContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description || '');
   const [editDueDate, setEditDueDate] = useState<Date>(new Date(task.dueDate));
+  const [editTags, setEditTags] = useState<string[]>(task.tags?.map(tag => tag.name) || []);
+  const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
 
   const handleComplete = (e?: React.MouseEvent) => {
@@ -132,20 +134,62 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     setEditTitle(task.title);
     setEditDescription(task.description || '');
     setEditDueDate(new Date(task.dueDate));
+    setEditTags(task.tags?.map(tag => tag.name) || []);
+    setTagInput('');
     setIsModalOpen(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await updateTask(task.id, { title: editTitle, description: editDescription });
-    await updateTaskDueDate(task.id, editDueDate);
+    
+    try {
+      await updateTask(task.id, { 
+        title: editTitle, 
+        description: editDescription,
+        tags: editTags
+      });
+      
+      if (editDueDate.getTime() !== task.dueDate.getTime()) {
+        await updateTaskDueDate(task.id, editDueDate);
+      }
+      
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+    
     setSaving(false);
-    setIsModalOpen(false);
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    setEditTitle(task.title);
+    setEditDescription(task.description || '');
+    setEditDueDate(new Date(task.dueDate));
+    setEditTags(task.tags?.map(tag => tag.name) || []);
+    setTagInput('');
+  };
+
+  const addTag = (tagName: string) => {
+    const trimmedTag = tagName.trim();
+    if (trimmedTag && !editTags.some(tag => tag.toLowerCase() === trimmedTag.toLowerCase())) {
+      setEditTags([...editTags, trimmedTag]);
+    }
+    setTagInput('');
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setEditTags(editTags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (tagInput.trim()) {
+        addTag(tagInput);
+      }
+    }
   };
 
   return (
@@ -212,6 +256,25 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
             }`}>
               {task.description}
             </p>
+          )}
+          {task.tags && task.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-3">
+              {task.tags.map((tag) => (
+                <span
+                  key={tag.id}
+                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    task.completed 
+                      ? 'bg-gray-100 text-gray-400' 
+                      : tag.color 
+                        ? `bg-${tag.color}-100 text-${tag.color}-800`
+                        : 'bg-blue-100 text-blue-800'
+                  }`}
+                >
+                  <TagIcon size={10} className="mr-1" />
+                  {tag.name}
+                </span>
+              ))}
+            </div>
           )}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
             <div className={`flex items-center gap-1.5 text-xs ${
@@ -290,6 +353,77 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
                 placeholder="Add more details..."
                 maxLength={500}
               />
+            </div>
+            
+            {/* Tags Section */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tags
+              </label>
+              <div className="space-y-2">
+                {/* Current tags */}
+                {editTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {editTags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      >
+                        <TagIcon size={10} className="mr-1" />
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          className="ml-1 hover:text-blue-600"
+                          disabled={saving}
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Tag input */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={handleTagInputKeyDown}
+                    placeholder="Add tags (press Enter)"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    disabled={saving}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => tagInput.trim() && addTag(tagInput)}
+                    className="px-3 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                    disabled={saving || !tagInput.trim()}
+                  >
+                    Add
+                  </button>
+                </div>
+                
+                {/* Existing tags suggestions */}
+                {tags.length > 0 && (
+                  <div className="text-xs text-gray-500">
+                    <span>Existing tags: </span>
+                    {tags.filter(tag => !editTags.includes(tag.name)).slice(0, 5).map((tag, index) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => addTag(tag.name)}
+                        className="text-indigo-600 hover:text-indigo-800 mx-1"
+                        disabled={saving}
+                      >
+                        {tag.name}
+                        {index < Math.min(4, tags.filter(t => !editTags.includes(t.name)).length - 1) && ','}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             
             {/* Due Date Section */}
