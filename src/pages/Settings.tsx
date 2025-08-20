@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useSettingsContext } from '../context/SettingsContext';
-import { Save, RefreshCw, Calendar, Clock } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Save, RefreshCw, Calendar, Clock, Lock, Eye, EyeOff } from 'lucide-react';
 
 const Settings = () => {
   const { settings, updateSettings, loading } = useSettingsContext();
+  const { changePassword } = useAuth();
   
   const [minDaysAhead, setMinDaysAhead] = useState(settings.minDaysAhead);
   const [maxDaysAhead, setMaxDaysAhead] = useState(settings.maxDaysAhead);
@@ -12,6 +14,17 @@ const Settings = () => {
   const [latestHour, setLatestHour] = useState(settings.latestHour);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +65,49 @@ const Settings = () => {
     setMaxDaysAhead(4);
     setEarliestHour(8);
     setLatestHour(23);
+  };
+  
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    
+    // Validation
+    if (!newPassword || !confirmPassword) {
+      setPasswordError('Please fill in all password fields');
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters');
+      return;
+    }
+    
+    setIsChangingPassword(true);
+    
+    try {
+      const result = await changePassword(newPassword);
+      
+      if (result.error) {
+        setPasswordError(result.error.message);
+      } else {
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setPasswordSuccess(true);
+        setTimeout(() => {
+          setPasswordSuccess(false);
+        }, 3000);
+      }
+    } catch (error) {
+      setPasswordError('An unexpected error occurred');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
   
   // Format hours for display (convert 24h to 12h format)
@@ -196,6 +252,90 @@ const Settings = () => {
               </div>
             </form>
           )}
+        </div>
+      </div>
+      
+      {/* Change Password Section */}
+      <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+        <div className="p-6">
+          <h2 className="flex items-center gap-2 text-lg font-medium text-gray-800 mb-4">
+            <Lock size={20} className="text-indigo-500" />
+            Change Password
+          </h2>
+          
+          {passwordError && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
+              {passwordError}
+            </div>
+          )}
+          
+          {passwordSuccess && (
+            <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg mb-4">
+              Password changed successfully!
+            </div>
+          )}
+          
+          <form onSubmit={handlePasswordChange}>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    id="newPassword"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Enter new password"
+                    disabled={isChangingPassword}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  >
+                    {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Confirm new password"
+                    disabled={isChangingPassword}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6">
+              <button
+                type="submit"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isChangingPassword || !newPassword || !confirmPassword}
+              >
+                {isChangingPassword ? 'Changing Password...' : 'Change Password'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
       
