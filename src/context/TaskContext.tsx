@@ -141,7 +141,7 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
 
       if (error) throw error;
 
-      const fetchedTags = data.map((tag: any) => ({
+      const fetchedTags = data.map((tag: { id: string; name: string; color?: string; user_id: string }) => ({
         id: tag.id,
         name: tag.name,
         color: tag.color,

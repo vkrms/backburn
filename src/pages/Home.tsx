@@ -7,7 +7,14 @@ import TaskCard from '../components/TaskCard';
 import Card from '../components/Card';
 import { CalendarClock, Clock, Tag as TagIcon, X } from 'lucide-react';
 
-const getRandomDueDate = (settings: any): Date => {
+interface Settings {
+  minDaysAhead: number;
+  maxDaysAhead: number;
+  earliestHour: number;
+  latestHour: number;
+}
+
+const getRandomDueDate = (settings: Settings): Date => {
   const { minDaysAhead, maxDaysAhead, earliestHour, latestHour } = settings;
   
   // Random day between minDaysAhead and maxDaysAhead
