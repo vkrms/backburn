@@ -3,13 +3,14 @@ import { motion } from 'framer-motion';
 import { useTaskContext } from '../context/TaskContext';
 import TaskCard from '../components/TaskCard';
 import Card from '../components/Card';
-import { ListFilter, Clock, Check, X, Tag as TagIcon } from 'lucide-react';
+import { ListFilter, Clock, Check, X, Tag as TagIcon, Shuffle } from 'lucide-react';
 
 const TaskList = () => {
   const { tasks, tags, loading } = useTaskContext();
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed'>('all');
   const [sortBy, setSortBy] = useState<'dueDate' | 'createdAt' | 'random'>('dueDate');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [shuffleKey, setShuffleKey] = useState(0);
   
   const filteredTasks = tasks.filter(task => {
     // Status filter
@@ -36,10 +37,25 @@ const TaskList = () => {
   const clearTagFilters = () => {
     setSelectedTags([]);
   };
+
+  // Simple seeded random number generator
+  const seededRandom = (seed: number) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+
+  const handleShuffle = () => {
+    setShuffleKey(prev => prev + 1);
+  };
   
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     if (sortBy === 'random') {
-      return Math.random() - 0.5;
+      // Create a hash from task ID and use seeded random for consistent ordering
+      const hashA = a.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const hashB = b.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const randomA = seededRandom(hashA + shuffleKey);
+      const randomB = seededRandom(hashB + shuffleKey);
+      return randomA - randomB;
     } else if (sortBy === 'dueDate') {
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     } else {
@@ -143,6 +159,16 @@ const TaskList = () => {
             <option value="createdAt">Created Date</option>
             <option value="random">Random</option>
           </select>
+          {sortBy === 'random' && (
+            <button
+              onClick={handleShuffle}
+              className="flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+              title="Re-shuffle random order"
+            >
+              <Shuffle size={12} />
+              {/* <span>Shuffle</span> */}
+            </button>
+          )}
         </div>
         
         {loading ? (
